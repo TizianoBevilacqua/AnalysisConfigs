@@ -92,6 +92,10 @@ class HH4bCommonProcessor(BaseProcessorABC):
         self.events["JetGood"] = jet_selection_nopu(
             self.events, "Jet", self.params, tight_cuts=self.tight_cuts
         )
+        if self.vbf_presel:
+            self.events["JetVBF"] = jet_selection_nopu(
+                self.events, "Jet", self.params, tight_cuts=self.tight_cuts, vbf=True
+            )
 
         self.events["Electron"] = ak.with_field(
             self.events.Electron,
