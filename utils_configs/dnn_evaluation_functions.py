@@ -34,7 +34,7 @@ def extract_inputs_global(input_name, output_name, events, variables, pad_value_
             variables_dict[data_name] = []
 
         if collection == "events":
-            ak_array = getattr(events, feature)
+            ak_array = ak.fill_none(getattr(events, feature), pad_value_spanet)
         elif ":" in collection:
             ak_array = getattr(getattr(events, collection.split(":")[0]), feature)
             pos = int(collection.split(":")[1])

@@ -244,13 +244,14 @@ if args.input_mc:
         inputfiles_mc = args.input_mc
     else:
         # get list of coffea files
+        input_dir_mc = os.path.dirname(args.input_mc[0])
         inputfiles_mc = [
-            os.path.join(input_dir, file)
-            for file in os.listdir(input_dir)
+            os.path.join(input_dir_mc, file)
+            for file in os.listdir(input_dir_mc)
             if file.endswith(".coffea") and "DATA" not in file
         ]
 
-    cat_col_mc, _ = get_columns_from_files(inputfiles_mc, "nominal", lambda x: "prov" not in x and "era" not in x, debug=False, novars=args.novars, filter_mixed=args.mixed)
+    cat_col_mc, _ = get_columns_from_files(inputfiles_mc, "nominal", lambda x: "prov" not in x and "era" not in x, debug=True, novars=args.novars, filter_mixed=args.mixed)
 
     if args.run2:
         cols_sig_mc = cat_col_mc[f"4b{args.region_suffix}_signal_regionRun2"]
@@ -512,7 +513,7 @@ def plot_single_var_from_columns(
             else:
                 # compute the range of the 4b category considering the 0.1% and 99.9% quantile
                 range_4b = (
-                    tuple(np.quantile(col_den, [0.001, 0.999])) if i == 0 else range_4b
+                    tuple(np.quantile(col_den, [0.00000, 1.00000])) if i == 0 else range_4b
                 )
 
                 mask_num_range4b = (col_num >= range_4b[0]) & (col_num <= range_4b[1])

@@ -41,7 +41,8 @@ default_parameters = defaults.get_default_parameters()
 defaults.register_configuration_dir("config_dir", localdir)
 
 # adding object preselection
-year = ["2023_postBPix"]
+# year = ["2023_postBPix"]
+year = ["2022_postEE"]
 config_options_dict["year"] = year
 parameters = defaults.merge_parameters_from_files(
     default_parameters,
@@ -78,23 +79,23 @@ preselection = define_preselection(config_options_dict)
 
 # Define the samples to process
 sample_ggF_list = [
-    # "GluGlutoHHto4B_spanet_kl-1p00_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-m2p00_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-m1p00_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-5p00_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-2p45_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-0p00_kt-0p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-3p50_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-4p00_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-3p00_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-2p00_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-1p50_kt-1p00_c2-0p00_skimmed",
-    # "GluGlutoHHto4B_spanet_kl-0p50_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-1p00_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-m2p00_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-m1p00_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-5p00_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-2p45_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-0p00_kt-0p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-3p50_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-4p00_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-3p00_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-2p00_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-1p50_kt-1p00_c2-0p00_skimmed",
+    "GluGlutoHHto4B_spanet_kl-0p50_kt-1p00_c2-0p00_skimmed",
     # 2023 Post_BPix
-    "GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00",
-    "GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00",
-    "GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00",
-    "GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00",
+    # "GluGlutoHHto4B_kl-0p00_kt-1p00_c2-0p00",
+    # "GluGlutoHHto4B_kl-1p00_kt-1p00_c2-0p00",
+    # "GluGlutoHHto4B_kl-2p45_kt-1p00_c2-0p00",
+    # "GluGlutoHHto4B_kl-5p00_kt-1p00_c2-0p00",
 ]
 
 sample_VBF_list = [
@@ -102,7 +103,7 @@ sample_VBF_list = [
     "VBFHHto4B_CV-m0p012_C2V-0p030_C3-10p2",
     "VBFHHto4B_CV-m0p758_C2V-1p44_C3-m19p3",
     "VBFHHto4B_CV-m0p962_C2V-0p959_C3-m1p43",
-    # "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94", # not present in 2023_postBPix
+    # # "VBFHHto4B_CV-m1p21_C2V-1p94_C3-m0p94", # not present in 2023_postBPix
     "VBFHHto4B_CV-m1p60_C2V-2p72_C3-m1p36",
     "VBFHHto4B_CV-m1p83_C2V-3p57_C3-m3p39",
     "VBFHHto4B_CV-m2p12_C2V-3p87_C3-m5p96",
@@ -126,7 +127,7 @@ sample_list = (
         # "DATA_JetMET_JMENano_F_skimmed",
         # "DATA_JetMET_JMENano_G_skimmed",
         # 2023 postBPix
-        "DATA_ParkingHH",
+        # "DATA_ParkingHH",
     ]
     + sample_ggF_list
     + sample_VBF_list
@@ -140,17 +141,27 @@ sample_list = (
     )
 )
 
+hard_cat_def = True
+if not hard_cat_def:
+    # Define the categories to save
+    categories_dict = define_categories(
+        bkg_morphing_dnn=config_options_dict["bkg_morphing_dnn"],
+        blind=config_options_dict["blind"],
+        spanet=config_options_dict["spanet"],
+        run2=config_options_dict["run2"],
+        vr1=config_options_dict["vr1"],
+        vbf_analysis=config_options_dict["vbf_analysis"],
+        vbf_discriminator=config_options_dict["vbf_discriminator"],
+    )
 
-# Define the categories to save
-categories_dict = define_categories(
-    bkg_morphing_dnn=config_options_dict["bkg_morphing_dnn"],
-    blind=config_options_dict["blind"],
-    spanet=config_options_dict["spanet"],
-    run2=config_options_dict["run2"],
-    vr1=config_options_dict["vr1"],
-    vbf_analysis=config_options_dict["vbf_analysis"],
-    vbf_discriminator=config_options_dict["vbf_discriminator"],
-)
+else:
+    categories_dict = {}
+    # for cat in ['4b_region',  
+    #             '2b_region_preW', 
+    #             '2b_region_postW'
+    #         ]:
+    for cat in ['4b_control_region', '4b_signal_region', "2b_control_region_postW", "2b_control_region_preW", "2b_signal_region_postW", "2b_signal_region_preW"]:# , 'vbf_best_candidates_6_jets_4b_region', 'vbf_best_candidates_6_jets_nokincut_4b_region']:
+        categories_dict |= define_single_category(cat)
 
 if BASELINE:
     categories_dict = {"baseline": [passthrough]}
@@ -163,7 +174,7 @@ if SPANET_TRAINING:
 column_list = []
 
 # Add SPANet training inputs
-if not config_options_dict["spanet"]:
+if (not config_options_dict["spanet"]) or (config_options_dict.get("save_spanet_input_variables", False)):
     if not config_options_dict["vbf_analysis"]:
         column_list += get_columns_list(
             SPANET_TRAINING_DEFAULT_COLUMNS_BTWP, not config_options_dict["save_chunk"]
@@ -186,6 +197,15 @@ if not config_options_dict["spanet"]:
             ),
             not config_options_dict["save_chunk"],
         )
+        if config_options_dict["dnn_variables"]:
+            total_input_columns = (
+                config_options_dict["output_sig_bkg_dnn_input_variables"]
+                | config_options_dict["output_bkg_morphing_dnn_input_variables"]
+                | {"year": ["events", "year"]}
+            )
+            column_list += create_DNN_columns_list(
+                False, not config_options_dict["save_chunk"], total_input_columns, btag=False
+            )
 elif (
     config_options_dict["vbf_matching_after_higgs_pairing"]
     and not config_options_dict["run2"]
@@ -240,7 +260,14 @@ else:
     )
     # Add special columns
     if config_options_dict["sig_bkg_dnn"]:
-        column_list += get_columns_list({"events": ["sig_bkg_dnn_score"]})
+        print("Adding sig_bkg_dnn_score columns to the output")
+        if config_options_dict["sig_bkg_dnn_multiclass"]:
+            column_list += get_columns_list({"events": ["sig_bkg_dnn_score_0", "sig_bkg_dnn_score_1", "sig_bkg_dnn_score_2", "sig_bkg_dnn_score_3", "sig_bkg_dnn_score"]})
+        else:
+            column_list += get_columns_list({"events": ["sig_bkg_dnn_score"]})
+
+for col in column_list:
+    print(col)
 
 bysample_bycategory_column_dict = {}
 for sample in sample_list:

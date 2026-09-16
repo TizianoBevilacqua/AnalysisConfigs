@@ -142,6 +142,9 @@ if args.mixed:
 else:
     inputfiles_rew = inputfiles_data
 
+print(f"Input files for data: {inputfiles_data}")
+print(f"Input files for MC: {inputfiles_mc}")
+print(f"Input files for reweighted: {inputfiles_rew}")
 filter_lambda = (
     (
         lambda x: (
@@ -505,8 +508,11 @@ def main(cat_cols, lumi, era_string):
     SR_weights = cat_cols[1][SR_region_rew]["weight"]
     if args.mask_large_weights:
         for key in cat_cols[1][CR_region_rew].keys():
-            cat_cols[1][CR_region_rew][key] = cat_cols[1][CR_region_rew][key][CR_weights < 100]
-            cat_cols[1][SR_region_rew][key] = cat_cols[1][SR_region_rew][key][SR_weights < 100]
+            if ("JetTotalSPANetPadded" in key) or ("JetGoodFromHiggsOrdered" in key): # This is a special case, as this variable is a 2D array and cannot be masked with the weights
+                continue    
+            print(key, len(cat_cols[1][CR_region_rew][key]), len(CR_weights))
+            cat_cols[1][CR_region_rew][key] = cat_cols[1][CR_region_rew][key][CR_weights < 200]
+            cat_cols[1][SR_region_rew][key] = cat_cols[1][SR_region_rew][key][SR_weights < 200]
 
     try:
         if args.run2:
@@ -637,7 +643,7 @@ def main(cat_cols, lumi, era_string):
                     if v == "weight":
                         # Note that the total luminosity is hardcoded here for 2022postEE
                         col_dict[v][cat_data_mc] = col_dict[v][cat_data_mc] * (
-                            float(lumi) / (5.79 + 17.6 + 2.88)
+                            1 #float(lumi) / (5.79 + 17.6 + 2.88)
                             if data_mc == "MC"
                             else 1
                         )
@@ -762,6 +768,13 @@ if __name__ == "__main__":
 
     ## Generating the lumi and era_string for the plots:
     lumi, era_string = get_era_lumi(total_datasets_list_data)
+
+    print()
+    print("----------------------------------------------------------------")
+    print("luminosity: ", lumi)
+    print("era_string: ", era_string)
+    print("----------------------------------------------------------------")
+    print()
 
     ############# Actual plotting command. Now a list with [datastuff, mcstuff] ######################
     main(

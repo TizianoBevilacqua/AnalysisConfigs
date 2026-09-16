@@ -5,6 +5,7 @@ class WorkerInferenceSessionPlugin(WorkerPlugin):
         super().__init__()
         self.model_path = model_path
         self.session_name = session_name
+        self.name = f"onnx_session_{session_name}"  # stable name for lookup via worker.plugins
 
     async def setup(self, worker: Worker):
         import onnxruntime as ort
@@ -16,15 +17,14 @@ class WorkerInferenceSessionPlugin(WorkerPlugin):
         )
         sess_options.intra_op_num_threads = 1
 
-        model_session = ort.InferenceSession(
+        self.model_session = ort.InferenceSession(
             self.model_path,
             sess_options=sess_options,
             providers=["CPUExecutionProvider"],
         )
 
-        worker.data[f"model_session_{self.session_name}"] = model_session
-        worker.data[f"input_name_{self.session_name}"] = [input.name for input in model_session.get_inputs()]
-        worker.data[f"output_name_{self.session_name}"] = [output.name for output in model_session.get_outputs()]
+        self.input_names = [input.name for input in self.model_session.get_inputs()]
+        self.output_names = [output.name for output in self.model_session.get_outputs()]
 
 
 def get_model_session(model_path, model_session_name):
@@ -50,9 +50,10 @@ def get_model_session(model_path, model_session_name):
         output_name = [output.name for output in model_session.get_outputs()]
 
     else:
-        model_session = worker.data[f"model_session_{model_session_name}"]
-        input_name = worker.data[f"input_name_{model_session_name}"]
-        output_name = worker.data[f"output_name_{model_session_name}"]
+        plugin = worker.plugins[f"onnx_session_{model_session_name}"]
+        model_session = plugin.model_session
+        input_name = plugin.input_names
+        output_name = plugin.output_names
 
 
     return model_session, input_name, output_name

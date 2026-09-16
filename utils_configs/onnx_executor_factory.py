@@ -18,4 +18,4 @@ class OnnxExecutorFactory(DaskExecutorFactory):
                 inference_session_plugin = WorkerInferenceSessionPlugin(
                     model, model_name
                 )
-                self.dask_client.register_worker_plugin(inference_session_plugin)
+                self.dask_client.register_plugin(inference_session_plugin)
