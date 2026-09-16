@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import logging
 
 import awkward as ak
@@ -34,7 +35,9 @@ from .custom_object_preselection_common import lepton_selection
 vector.register_awkward()
 
 # fix random seed
-np.random.seed(42)
+# master seed of the jet pt smearing: change it to regenerate a training sample
+# with completely different random weights
+RANDOM_PT_SEED = 42
 
 logging.basicConfig(
     format="%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s",
@@ -292,28 +295,55 @@ class HH4bCommonProcessor(BaseProcessorABC):
     #     super().apply_preselection(self, variation)
     #     self._preselections = self._preselections_temp
 
-    def flatten_pt(self, rand_type, jet_collection):
+    def get_random_pt_weights(self, rand_type):
+        """
+        Draw one pt smearing factor per event for the current chunk.
+
+        The generator is seeded from the dataset name and from the first event of
+        the chunk, so the weights are reproducible from one run to the next,
+        differ between chunks and between datasets, and do not depend on which
+        worker picks the chunk up.
+        """
         if rand_type == 0.5:
-            random_weights = ak.Array(
-                np.random.rand((len(self.events[jet_collection].pt))) + 0.5
-            )  # [0.5,1.5]
+            low, width = 0.5, 1.0  # [0.5,1.5]
         elif rand_type == 0.3:
-            random_weights = ak.Array(
-                np.random.rand((len(self.events[jet_collection].pt))) * 1.4 + 0.3
-            )  # [0.3,1.7]
+            low, width = 0.3, 1.4  # [0.3,1.7]
         elif rand_type == 0.1:
-            random_weights = ak.Array(
-                np.random.rand((len(self.events[jet_collection].pt))) * 9.9 + 0.1
-            )  # [0.1,10.0]
+            low, width = 0.1, 9.9  # [0.1,10.0]
         else:
             raise ValueError(f"Invalid input. rand_type {rand_type} not known.")
 
-        random_weights = ak.to_regular(random_weights[:, np.newaxis], axis=1)
-        self.events = ak.with_field(
-            self.events,
-            random_weights,
-            "random_pt_weights",
-        )
+        if len(self.events) > 0:
+            chunk_tag = f"{self.events.luminosityBlock[0]}|{self.events.event[0]}"
+        else:
+            chunk_tag = "empty"
+        # hashlib instead of hash(): the built-in string hash is salted per
+        # process, so it would not be reproducible across runs
+        chunk_id = f"{RANDOM_PT_SEED}|{self.events.metadata['dataset']}|{chunk_tag}"
+        seed = int.from_bytes(hashlib.sha256(chunk_id.encode()).digest()[:8], "little")
+
+        rng = np.random.default_rng(seed)
+        random_weights = ak.Array(rng.random(len(self.events)) * width + low)
+        return ak.to_regular(random_weights[:, np.newaxis], axis=1)
+
+    def flatten_pt(self, rand_type, jet_collection):
+        # The smearing factor is a property of the event, not of the jet
+        # collection: several collections of the same chunk are flattened one
+        # after the other and then concatenated together (e.g. in
+        # JetTotalSPANetSeparateProvHiggsVBFPtFlattenPadded), and the factor is
+        # stored only once per event as `random_pt_weights`. So it is drawn once
+        # per chunk and reused by every following call, otherwise the two halves
+        # of an event would be scaled differently and the stored column would
+        # only match the collection flattened last.
+        if "random_pt_weights" in self.events.fields:
+            random_weights = self.events.random_pt_weights
+        else:
+            random_weights = self.get_random_pt_weights(rand_type)
+            self.events = ak.with_field(
+                self.events,
+                random_weights,
+                "random_pt_weights",
+            )
 
         self.events[jet_collection] = ak.with_field(
             self.events[jet_collection],
@@ -1618,21 +1648,42 @@ class HH4bCommonProcessor(BaseProcessorABC):
                 max_num_jets_spanet=self.max_num_jets_spanet_class,
             )
             if out_type == "spanet":
-                if onnx_output["class_prob"][0].shape[1] > 2:
-                    print("Warning: multi-class DNN detected. Number of classes: ", onnx_output["class_prob"][0].shape[1])
-                    onnx_output = onnx_output["class_prob"][0]
+                class_prob = onnx_output["class_prob"][0]
+                if class_prob.shape[1] > 2:
+                    print(
+                        "Warning: multi-class DNN detected. Number of classes: ",
+                        class_prob.shape[1],
+                    )
+                    onnx_output = class_prob
                 else:
-                    onnx_output = onnx_output["class_prob"][0][:, 1]
-            # if array is 1 dim just take it
+                    onnx_output = class_prob[:, 1]
+
             if isinstance(onnx_output, list):
-                # multi-output DNN — handle list of arrays
-                print("Warning: multi-output DNN detected. Not implemented yet.")
-            elif onnx_output.ndim == 1:
+                raise NotImplementedError(
+                    "multi-output DNN is not supported for sig_bkg_dnn: "
+                    f"get_onnx_prediction returned {len(onnx_output)} arrays"
+                )
+            # if array is 1 dim just take it
+            if onnx_output.ndim == 1:
                 self.events["sig_bkg_dnn_score"] = onnx_output
+            elif onnx_output.shape[1] <= 2:
+                # single-output or binary classifier: the signal probability is the
+                # last column, which for 2 classes is the same convention as the
+                # spanet branch above (`class_prob[:, 1]`)
+                self.events["sig_bkg_dnn_score"] = onnx_output[:, -1]
             else:
+                # multi-class classifier: save one column per class and build the
+                # signal-vs-background discriminant out of the first two.
+                # NOTE: this assumes classes 0 and 1 are the ones to discriminate;
+                # adapt it if the model orders its classes differently.
                 for i in range(onnx_output.shape[1]):
                     self.events[f"sig_bkg_dnn_score_{i}"] = onnx_output[:, i]
-                self.events["sig_bkg_dnn_score"] = self.events[f"sig_bkg_dnn_score_0"] / (self.events[f"sig_bkg_dnn_score_0"] + self.events[f"sig_bkg_dnn_score_1"])
+                self.events["sig_bkg_dnn_score"] = self.events[
+                    "sig_bkg_dnn_score_0"
+                ] / (
+                    self.events["sig_bkg_dnn_score_0"]
+                    + self.events["sig_bkg_dnn_score_1"]
+                )
 
             del (
                 model_session_SIG_BKG_DNN,

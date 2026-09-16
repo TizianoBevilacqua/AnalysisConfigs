@@ -1,8 +1,10 @@
-scaleout: 20
+scaleout: 40
 cores-per-worker: 1
 mem-per-worker: "30GB"
-disk-per-worker: "1GB"
+disk-per-worker: "2GB"
 queue: "standard"
 walltime: "04:00:00"
-chunksize: 50000
+chunksize: 10000
 retries: 1
+custom-setup-commands:
+  - "export LD_LIBRARY_PATH=/work/bevila_t/PostDoc/micromamba/envs/my-pocket-coffea/lib:$LD_LIBRARY_PATH"

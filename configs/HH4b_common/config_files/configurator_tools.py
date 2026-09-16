@@ -1536,7 +1536,6 @@ def define_categories(
                 categories_dict |= define_single_category(
                     f"2b_signal_region_postW"
                 )
-                print(" -!!!!!- Defining 2b_region_postW category")
                 categories_dict |= (
                     define_single_category(f"2b_region_postW")
                 )
@@ -1648,7 +1647,7 @@ def define_preselection(options):
     # Needed only by the private ZZ/ZH samples, which are inclusive in the
     # decay channel. Off by default because it changes the yields of every
     # sample whose name contains "HH", "ZH" or "ZZ".
-    if options.get("xx4b_presel", False):
+    if options["xx4b_presel"]:
         preselection.append(cuts.XX4b_presel)
 
     return preselection
